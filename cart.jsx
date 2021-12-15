@@ -199,7 +199,6 @@ const Products = (props) => {
     doFetch(url);
 
     let floorStock = [...products];
-    console.log(data.data);
     data.data.forEach(({attributes: p}) => {
       let restockedItem = floorStock.filter(item => item.name == p.name)[0]; 
       restockedItem ? restockedItem.instock += p.instock : restockedItem.instock += 0;
