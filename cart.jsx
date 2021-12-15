@@ -92,9 +92,9 @@ const Products = (props) => {
 
   //  Fetch Data
   const { Fragment, useState, useEffect, useReducer } = React;
-  const [query, setQuery] = useState("http://localhost:1337/products");
+  const [query, setQuery] = useState("http://localhost:1337/api/products");
   const [{ data, isLoading, isError }, doFetch] = useDataApi(
-    "http://localhost:1337/products",
+    "http://localhost:1337/api/products",
     {
       data: [],
     }
@@ -199,8 +199,8 @@ const Products = (props) => {
     doFetch(url);
 
     let floorStock = [...products];
-
-    data.forEach(p => {
+    console.log(data.data);
+    data.data.forEach(({attributes: p}) => {
       let restockedItem = floorStock.filter(item => item.name == p.name)[0]; 
       restockedItem ? restockedItem.instock += p.instock : restockedItem.instock += 0;
     });
