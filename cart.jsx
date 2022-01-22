@@ -1,16 +1,7 @@
-// simulate getting products from DataBase
-const products = [
-  { name: "Apples", country: "Italy", cost: 3, instock: 10 },
-  { name: "Oranges", country: "Spain", cost: 4, instock: 3 },
-  { name: "Beans", country: "USA", cost: 2, instock: 5 },
-  { name: "Cabbage", country: "USA", cost: 1, instock: 8 },
-];
 
 //=========Cart=============
-const Cart = (props) => {
-  const { Card, Accordion, Button } = ReactBootstrap;
-  let data = props.location.data ? props.location.data : products;
-
+const Cart = () => {
+  const { Accordion } = ReactBootstrap;
   return <Accordion defaultActiveKey="0">{list}</Accordion>;
 };
 
@@ -75,10 +66,9 @@ const dataFetchReducer = (state, action) => {
   }
 };
 
-const Products = (props) => {
-  const [items, setItems] = React.useState(products);
+const Products = () => {
+  const [items, setItems] = React.useState([]);
   const [cart, setCart] = React.useState([]);
-  const [total, setTotal] = React.useState(0);
   const {
     Card,
     Accordion,
@@ -87,18 +77,17 @@ const Products = (props) => {
     Row,
     Col,
     Image,
-    Input,
   } = ReactBootstrap;
 
   //  Fetch Data
-  const { Fragment, useState, useEffect, useReducer } = React;
+  const { useState, useEffect } = React;
   const [query, setQuery] = useState("http://localhost:1337/api/products");
   const [{ data, isLoading, isError }, doFetch] = useDataApi(
     "http://localhost:1337/api/products",
     {
       data: [],
     }
-  );
+  ); 
 
   // Add an item to the cart and remove it from the stock on the floor
   const addToCart = (e) => {
@@ -107,7 +96,7 @@ const Products = (props) => {
     setCart([...cart, ...item]);
 
     // Reduce stock
-    let floorStock = [...products];
+    let floorStock = [...items];
     floorStock.forEach(p => p.name === name ? p.instock-- : p.instock = p.instock);
     setItems([...floorStock]);
 
@@ -116,7 +105,7 @@ const Products = (props) => {
   // Delete an item from the cart and add it back to the stock on the shelf
   const deleteCartItem = (index) => {
     let product = cart.filter((item,i) => index === i)[0];
-    let floorStock = [...products];
+    let floorStock = [...items];
     floorStock.forEach(p => p.name == product.name ? p.instock++ : p.instock += 0);
     setItems([...floorStock]);
 
@@ -127,8 +116,7 @@ const Products = (props) => {
   const photos = ["apple.png", "orange.png", "beans.png", "cabbage.png"];
 
   let list = items.map((item, index) => {
-    //let n = index + 1049;
-    //let url = "https://picsum.photos/id/" + n + "/50/50";
+    
     if (item.instock > 0) {
       return (
         <li key={index} style={{display:"flex", margin: "10px 0px", alignItems:"center"}}>
@@ -194,19 +182,34 @@ const Products = (props) => {
     return newTotal;
   };
   // TODO: implement the restockProducts function
-  const restockProducts = (url) => {
+  const restockProducts = async (url) => {
 
-    doFetch(url);
+    await doFetch(url);
 
-    let floorStock = [...products];
-    data.data.forEach(({attributes: p}) => {
-      let restockedItem = floorStock.filter(item => item.name == p.name)[0]; 
-      restockedItem ? restockedItem.instock += p.instock : restockedItem.instock += 0;
-    });
+    let floorStock = [...items];
+
+    if (items.length === 0) {
+      data.data.forEach(({ attributes: p }) => {
+        const {name, country, cost, instock} = p;
+        floorStock.push({ name, country, cost: Number(cost), instock: Number(instock) });
+      });
+    }
+    else {
+      data.data.forEach(({attributes: p}) => {
+        let restockedItem = floorStock.filter(item => item.name == p.name)[0]; 
+        restockedItem ? restockedItem.instock += p.instock : restockedItem.instock += 0;
+      });
+    }
 
     setItems(floorStock);
 
   };
+
+  useEffect(() => {
+    if (items.length === 0) {
+      restockProducts("http://localhost:1337/api/products");
+    }
+  }, [items]);
 
   return (
     <Container>
@@ -239,7 +242,7 @@ const Products = (props) => {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <button style={{margin:"0px 10px"}} type="submit">Restock Products</button>
+          <button style={{margin:"0px 10px"}} type="submit">{items.length === 0 ? 'Stock Products' : 'Restock Products'}</button>
         </form>
       </Row>
     </Container>
